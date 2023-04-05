@@ -39,9 +39,10 @@ namespace ReGUID
             this.buttonStart = new System.Windows.Forms.Button();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.listBox1 = new System.Windows.Forms.ListBox();
+            this.listBoxOutput = new System.Windows.Forms.ListBox();
             this.checkBoxHaltOnError = new System.Windows.Forms.CheckBox();
             this.buttonCancel = new System.Windows.Forms.Button();
+            this.buttonExport = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -125,7 +126,7 @@ namespace ReGUID
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.listBox1);
+            this.groupBox1.Controls.Add(this.listBoxOutput);
             this.groupBox1.Location = new System.Drawing.Point(13, 80);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(546, 201);
@@ -133,14 +134,14 @@ namespace ReGUID
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Output";
             // 
-            // listBox1
+            // listBoxOutput
             // 
-            this.listBox1.FormattingEnabled = true;
-            this.listBox1.ItemHeight = 20;
-            this.listBox1.Location = new System.Drawing.Point(7, 27);
-            this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(533, 164);
-            this.listBox1.TabIndex = 0;
+            this.listBoxOutput.FormattingEnabled = true;
+            this.listBoxOutput.ItemHeight = 20;
+            this.listBoxOutput.Location = new System.Drawing.Point(7, 27);
+            this.listBoxOutput.Name = "listBoxOutput";
+            this.listBoxOutput.Size = new System.Drawing.Size(533, 164);
+            this.listBoxOutput.TabIndex = 0;
             // 
             // checkBoxHaltOnError
             // 
@@ -156,6 +157,7 @@ namespace ReGUID
             // 
             // buttonCancel
             // 
+            this.buttonCancel.Enabled = false;
             this.buttonCancel.Location = new System.Drawing.Point(565, 252);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(116, 29);
@@ -164,11 +166,23 @@ namespace ReGUID
             this.buttonCancel.UseVisualStyleBackColor = true;
             this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
             // 
+            // buttonExport
+            // 
+            this.buttonExport.Enabled = false;
+            this.buttonExport.Location = new System.Drawing.Point(566, 211);
+            this.buttonExport.Name = "buttonExport";
+            this.buttonExport.Size = new System.Drawing.Size(115, 35);
+            this.buttonExport.TabIndex = 11;
+            this.buttonExport.Text = "Export output";
+            this.buttonExport.UseVisualStyleBackColor = true;
+            this.buttonExport.Click += new System.EventHandler(this.buttonExport_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(695, 293);
+            this.Controls.Add(this.buttonExport);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.checkBoxHaltOnError);
             this.Controls.Add(this.groupBox1);
@@ -181,7 +195,7 @@ namespace ReGUID
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Name = "MainForm";
-            this.Text = "MainForm";
+            this.Text = "ReGUID by Greymane/Elioth";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.groupBox1.ResumeLayout(false);
@@ -202,8 +216,9 @@ namespace ReGUID
         private System.Windows.Forms.Button buttonStart;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.ListBox listBox1;
+        private System.Windows.Forms.ListBox listBoxOutput;
         private System.Windows.Forms.CheckBox checkBoxHaltOnError;
         private System.Windows.Forms.Button buttonCancel;
+        private System.Windows.Forms.Button buttonExport;
     }
 }

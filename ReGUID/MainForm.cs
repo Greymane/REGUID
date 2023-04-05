@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Diagnostics;
 using System.Data;
 using System.Drawing;
@@ -34,9 +35,11 @@ namespace ReGUID
         private void buttonStart_Click(object sender, EventArgs e)
         {
             buttonStart.Enabled = false;
+            buttonExport.Enabled = false;
             checkBoxHaltOnError.Enabled = false;
             progressBar1.Value = progressBar1.Minimum;
             labelFixedCount.Text = "0";
+            buttonCancel.Enabled = true;
             if (backgroundWorker1.IsBusy != true)
             {
                 // Start the asynchronous operation.
@@ -46,15 +49,15 @@ namespace ReGUID
 
         private void UpdateListBox(string text)
         {
-            if (listBox1.InvokeRequired)
+            if (listBoxOutput.InvokeRequired)
             {
-                listBox1.Invoke((MethodInvoker)delegate { UpdateListBox(text); });
+                listBoxOutput.Invoke((MethodInvoker)delegate { UpdateListBox(text); });
             }
             else
             {
-                listBox1.Items.Add(text);
-                if (listBox1.Items.Count % 1000 == 0) // Prevents stuttering the control
-                    listBox1.SetSelected(listBox1.Items.Count - 1, true);
+                listBoxOutput.Items.Add(text);
+                if (listBoxOutput.Items.Count % 1000 == 0) // Prevents stuttering the control
+                    listBoxOutput.SetSelected(listBoxOutput.Items.Count - 1, true);
             }
         }
 
@@ -81,7 +84,7 @@ namespace ReGUID
              * Handle indexation to speed up table lookups.
              * Gotta thank MySQL for not supporting DROP INDEX IF EXISTS....
              */
-            string[] dropIndexes = { "ReGUIDCondition", "ReGUIDSourceType", "ReGUIDSAI", "ReGUIDLinked", "ReGUIDCreature", "ReGUIDVehicle" };
+            string[] dropIndexes = { "ReGUIDCondition", "ReGUIDSourceType", "ReGUIDCreatureFormations", "ReGUIDSAI", "ReGUIDLinked", "ReGUIDLinkedLinked", "ReGUIDCreature", "ReGUIDVehicle" };
             foreach (string index in dropIndexes)
             {
                 string tableName = "";
@@ -98,11 +101,17 @@ namespace ReGUID
                             case "ReGUIDSourceType":
                                 tableName = "conditions";
                                 break;
+                            case "ReGUIDCreatureFormations":
+                                tableName = "creature_formations";
+                                break;
                             case "ReGUIDSAI":
                                 tableName = "smart_scripts";
                                 break;
                             case "ReGUIDLinked":
                                 tableName = "creature_linked_respawn";
+                                break;
+                            case "ReGUIDLinkedLinked":
+                                tableName = "linked_respawn";
                                 break;
                             case "ReGUIDCreature":
                                 tableName = "creature";
@@ -135,10 +144,12 @@ namespace ReGUID
             MySqlCommand CreateIndexCommand = new MySqlCommand(
                 "CREATE INDEX ReGUIDCondition ON conditions (ConditionTypeOrReference,ConditionValue3);" +
                 "CREATE INDEX ReGUIDSourceType ON conditions(SourceTypeOrReferenceId, SourceEntry);" +
+                "CREATE INDEX ReGUIDCreatureFormations ON creature_formations(leaderGUID);" +
                 "CREATE INDEX ReGUIDSAI ON smart_scripts(target_type, target_param1);" +
                 "CREATE INDEX REGUIDLinked ON creature_linked_respawn(linkedGuid);" +
                 "CREATE INDEX REGUIDCreature ON creature(id);" +
-                "CREATE INDEX REGUIDVehicle ON vehicle_accessory(guid);", worldDBConnection);
+                "CREATE INDEX REGUIDVehicle ON vehicle_accessory(guid);" +
+                "CREATE INDEX ReGUIDLinkedLinked ON linked_respawn(linkedGuid);", worldDBConnection);
 
             try
             {
@@ -176,6 +187,8 @@ namespace ReGUID
                     }
                 }
             }
+
+            readerChar.Close();
 
             MySqlCommand charCommand = new MySqlCommand("CREATE INDEX ReGUIDAuction ON auctionhouse (auctioneerGuid);", charDBConnection);
 
@@ -227,7 +240,9 @@ namespace ReGUID
                     "UPDATE `smart_scripts` SET `target_param1` = '{0}' WHERE `target_param1` = {1} AND target_type = 10; \n" +
                     "UPDATE `creature_linked_respawn` SET `guid` = '{0}' WHERE `guid` = {1}; \n" +
                     "UPDATE `creature_linked_respawn` SET `linkedGuid` = {0} WHERE `linkedGuid` = {1}; \n" +
-                    "UPDATE `vehicle_accessory` SET `guid` = {0} WHERE `guid` = {1}; \n"
+                    "UPDATE `vehicle_accessory` SET `guid` = {0} WHERE `guid` = {1}; \n" +
+                    "UPDATE `linked_respawn` SET `guid` = {0} WHERE `guid` = {1}; \n" +
+                    "UPDATE `linked_respawn` SET `linkedGuid` = {0} WHERE `guid` = {1}; \n"
                     , arguments);
 
                 string charUpdateString = string.Format(
@@ -259,11 +274,11 @@ namespace ReGUID
                     UpdateListBox(ex.Message + "\n");
                 }
 
-                UpdateListBox(charUpdateString);
+                //UpdateListBox(charUpdateString);
 
                 try
                 {
-                    charCommand.ExecuteNonQuery();
+                    UpdateCommandChar.ExecuteNonQuery();
                 }
                 catch (MySqlException ex)
                 {
@@ -460,6 +475,7 @@ namespace ReGUID
                 progressBar1.Value = progressBar1.Minimum;
             }
             FillLabelData();
+            buttonExport.Enabled = true;
             buttonStart.Enabled = true;
             checkBoxHaltOnError.Enabled = true;
         }
@@ -468,13 +484,43 @@ namespace ReGUID
         {
             if (backgroundWorker1.WorkerSupportsCancellation && !backgroundWorker1.CancellationPending)
                 backgroundWorker1.CancelAsync();
+            buttonCancel.Enabled = false;
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             Form form = Application.OpenForms["ConnectionForm"];
             if (form != null)
-                form.Show();
+            {
+                ConnectionForm connForm = form as ConnectionForm;
+                connForm.Show();
+                connForm.EnableButtons();
+            }
+        }
+
+        private void buttonExport_Click(object sender, EventArgs e)
+        {
+            string filePath = "output_" + DateTime.Now.ToString("yyyy_MM_dd") + ".txt";
+
+            // Open a StreamWriter to the file
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                // Iterate over each item in the ListBox and write it to the file
+                foreach (object item in listBoxOutput.Items)
+                {
+                    writer.WriteLine(item.ToString());
+                }
+            }
+
+            // Display a message box to indicate that the output is complete
+            DialogResult result = MessageBox.Show("Output complete, do you want to open the file?", "Information", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            if (result == DialogResult.Yes)
+            {
+                Process.Start("notepad.exe", filePath);
+            }
+            else
+                MessageBox.Show("Output file generated to REGUID root directory", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
         }
 
         void FillLabelData()

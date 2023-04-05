@@ -21,6 +21,12 @@ namespace ReGUID
             InitializeComponent();
         }
 
+        public void EnableButtons()
+        {
+            buttonSave.Enabled = true;
+            buttonConnect.Enabled = true;
+        }
+
         private void buttonSave_Click(object sender, EventArgs e)
         {
             try
@@ -76,6 +82,9 @@ namespace ReGUID
             if (CharDBConnection != null)
                 CharDBConnection.Close();
 
+            buttonConnect.Enabled = false;
+            buttonSave.Enabled = false;
+
             string server = textBoxHost.Text;
             string user = textBoxUsername.Text;
             string password = textBoxPassword.Text;
@@ -104,6 +113,8 @@ namespace ReGUID
             }
             catch (MySqlException ex)
             {
+                buttonConnect.Enabled = true;
+                buttonSave.Enabled = true;
                 MessageBox.Show("Could not connect to World MySQL database. \nError: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -115,6 +126,8 @@ namespace ReGUID
             }
             catch (MySqlException ex)
             {
+                buttonConnect.Enabled = true;
+                buttonSave.Enabled = true;
                 MessageBox.Show("Could not connect to World MySQL database. \nError: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
